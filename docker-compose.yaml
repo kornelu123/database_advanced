@@ -1,0 +1,37 @@
+services:
+  db:
+    image: postgres:16
+    container_name: item_exchange_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: item_exchange
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./mydb.sql:/docker-entrypoint-initdb.d/mydb.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d item_exchange"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: item_exchange_api
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/item_exchange
+      SECRET_KEY: trzydwajedenboksstop
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./app:/app/app
+
+volumes:
+  postgres_data:
